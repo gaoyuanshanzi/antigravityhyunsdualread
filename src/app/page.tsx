@@ -61,17 +61,19 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100/70 flex flex-col overflow-x-hidden font-sans">
-      {/* Top Navbar */}
-      <Navbar
-        onLogout={handleLogout}
-        onOpenHelp={() => setIsHelpOpen(true)}
-      />
+    <div className="h-screen max-h-screen overflow-hidden bg-slate-100/70 flex flex-col font-sans select-none">
+      {/* Top Navbar (Fixed, Never Moves) */}
+      <div className="shrink-0">
+        <Navbar
+          onLogout={handleLogout}
+          onOpenHelp={() => setIsHelpOpen(true)}
+        />
+      </div>
 
-      {/* Main Workspace */}
-      <main className="flex-1 p-2 sm:p-3 md:p-4 max-w-[1920px] w-full mx-auto flex flex-col">
-        {/* Top 3 Tab Buttons (Requested: Panel A, Panel B, Study note) */}
-        <div className="flex items-center justify-between mb-2.5">
+      {/* Main Workspace (Strictly pinned to viewport, no outer page scrolling) */}
+      <main className="flex-1 min-h-0 overflow-hidden p-2 sm:p-3 md:p-4 max-w-[1920px] w-full mx-auto flex flex-col">
+        {/* Top 3 Tab Buttons (Fixed, Never Moves) */}
+        <div className="shrink-0 flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200/90 rounded-xl shadow-2xs w-full lg:w-auto">
             {/* Tab 1: Panel A */}
             <button
@@ -131,41 +133,41 @@ export default function HomePage() {
             </button>
           </div>
 
-          <span className="hidden xl:inline-text text-xs text-slate-400">
-            모바일 탭 이동 &bull; 스마트폰 및 태블릿 반응형 뷰 지원
+          <span className="hidden xl:inline-block text-xs text-slate-400">
+            패널별 독립 슬라이딩 바 &bull; 전체 화면 고정
           </span>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 h-[calc(100vh-8.5rem)] min-h-[580px]">
+        {/* Content Area (Strictly min-h-0 overflow-hidden) */}
+        <div className="flex-1 min-h-0 overflow-hidden">
           {/* Case 1: Desktop 'all' 3-column split view */}
           {activeTab === 'all' ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 h-full">
-              <section className="h-full flex flex-col min-w-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 h-full min-h-0 overflow-hidden">
+              <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
                 <ReaderPanel id="A" panelName="Panel A" />
               </section>
-              <section className="h-full flex flex-col min-w-0">
+              <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
                 <ReaderPanel id="B" panelName="Panel B" />
               </section>
-              <section className="h-full flex flex-col min-w-0">
+              <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
                 <StudyNoteEditor />
               </section>
             </div>
           ) : (
             /* Case 2: Single Tab view (Mobile / Focused view) */
-            <div className="h-full">
+            <div className="h-full min-h-0 overflow-hidden">
               {activeTab === 'A' && (
-                <section className="h-full flex flex-col min-w-0">
+                <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
                   <ReaderPanel id="A" panelName="Panel A" />
                 </section>
               )}
               {activeTab === 'B' && (
-                <section className="h-full flex flex-col min-w-0">
+                <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
                   <ReaderPanel id="B" panelName="Panel B" />
                 </section>
               )}
               {activeTab === 'note' && (
-                <section className="h-full flex flex-col min-w-0">
+                <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
                   <StudyNoteEditor />
                 </section>
               )}

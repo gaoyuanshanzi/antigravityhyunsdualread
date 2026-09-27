@@ -106,7 +106,7 @@ export default function ReaderPanel({ id, panelName }: ReaderPanelProps) {
   return (
     <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
       {/* 1. Top Section: WWW URL Input (Matching Image 1: www) */}
-      <div className="p-2.5 bg-slate-50/80 border-b border-slate-200/80 space-y-2">
+      <div className="shrink-0 p-2.5 bg-slate-50/80 border-b border-slate-200/80 space-y-2">
         <form onSubmit={handleUrlSubmit} className="flex items-center gap-1.5">
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -201,7 +201,7 @@ export default function ReaderPanel({ id, panelName }: ReaderPanelProps) {
       </div>
 
       {/* Subheader / Status Bar */}
-      <div className="px-3 py-1.5 bg-white border-b border-slate-100 flex items-center justify-between text-xs text-slate-500">
+      <div className="shrink-0 px-3 py-1.5 bg-white border-b border-slate-100 flex items-center justify-between text-xs text-slate-500">
         <div className="flex items-center gap-2 truncate">
           <span className="font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] border border-blue-200">
             {panelName}
@@ -290,10 +290,10 @@ export default function ReaderPanel({ id, panelName }: ReaderPanelProps) {
       </div>
 
       {/* 3. Main Content Display Area (Matching Image 1: Panel A / Panel B) */}
-      <div className="flex-1 overflow-auto bg-slate-50/30 relative">
+      <div className="flex-1 min-h-0 relative overflow-hidden bg-slate-50/30 flex flex-col">
         {/* State: Empty */}
         {activeMode === 'none' && (
-          <div className="h-full flex flex-col items-center justify-center p-6 text-center text-slate-400">
+          <div className="flex-1 min-h-0 panel-scroll p-6 text-center text-slate-400 flex flex-col items-center justify-center">
             <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3 border border-slate-200">
               <BookOpen className="w-6 h-6" />
             </div>
@@ -334,7 +334,7 @@ export default function ReaderPanel({ id, panelName }: ReaderPanelProps) {
 
         {/* State: URL Mode */}
         {activeMode === 'url' && (
-          <div className="w-full h-full bg-white relative">
+          <div className="w-full h-full min-h-0 flex-1 bg-white relative">
             <iframe
               key={iframeKey}
               src={proxyMode === 'proxy' ? `/api/proxy?url=${encodeURIComponent(activeUrl)}` : activeUrl}
@@ -347,7 +347,7 @@ export default function ReaderPanel({ id, panelName }: ReaderPanelProps) {
 
         {/* State: File Mode */}
         {activeMode === 'file' && loadedDoc && (
-          <div className="h-full overflow-y-auto p-4 bg-white">
+          <div className="flex-1 min-h-0 panel-scroll p-4 bg-white">
             {/* 1. PDF File Viewer */}
             {loadedDoc.type === 'pdf' ? (
               <div className="w-full h-full min-h-[500px] flex flex-col">

@@ -125,7 +125,7 @@ export default function StudyNoteEditor() {
   return (
     <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
       {/* Top Header: Export file & Title */}
-      <div className="px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between gap-3">
+      <div className="shrink-0 px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <FileEdit className="w-4 h-4 text-blue-600 shrink-0" />
           <input
@@ -160,18 +160,20 @@ export default function StudyNoteEditor() {
       </div>
 
       {/* Formatting Ribbon Menu (Image 2) */}
-      <RibbonToolbar
-        editor={editor}
-        onExportClick={() => setIsExportOpen(true)}
-      />
+      <div className="shrink-0">
+        <RibbonToolbar
+          editor={editor}
+          onExportClick={() => setIsExportOpen(true)}
+        />
+      </div>
 
-      {/* TipTap Rich Editor Main Body */}
-      <div className="flex-1 overflow-y-auto p-2 bg-white">
+      {/* TipTap Rich Editor Main Body with independent sliding bar */}
+      <div className="flex-1 min-h-0 panel-scroll p-4 bg-white">
         <EditorContent editor={editor} />
       </div>
 
       {/* Editor Bottom Status Bar */}
-      <div className="px-4 py-1.5 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+      <div className="shrink-0 px-4 py-1.5 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
         <div className="flex items-center gap-3">
           <span>글자 수: <strong className="text-slate-600">{charCount.toLocaleString()}</strong>자</span>
           {lastSaved && (
