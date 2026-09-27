@@ -1,101 +1,91 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState, useEffect } from 'react';
+import Navbar from '@/components/Navbar';
+import ReaderPanel from '@/components/ReaderPanel';
+import StudyNoteEditor from '@/components/StudyNoteEditor';
+import LoginView from '@/components/LoginView';
+import HelpModal from '@/components/HelpModal';
+
+export default function HomePage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  // Check login state
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('hyuns_dualread_logged_in');
+      if (stored === 'true') {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+    }
+  }, []);
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // ignore
+    }
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('hyuns_dualread_logged_in');
+    }
+    setIsAuthenticated(false);
+  };
+
+  // Prevent flash while checking auth
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // If not logged in, show clean Login screen (ID/PW empty, white mode)
+  if (!isAuthenticated) {
+    return <LoginView onSuccess={handleLoginSuccess} />;
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-slate-100/70 flex flex-col overflow-x-hidden font-sans">
+      {/* Top Navbar */}
+      <Navbar
+        onLogout={handleLogout}
+        onOpenHelp={() => setIsHelpOpen(true)}
+      />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Main Workspace (3 Columns matching Image 1) */}
+      <main className="flex-1 p-3 md:p-4 max-w-[1920px] w-full mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 h-[calc(100vh-5.5rem)] min-h-[640px]">
+          {/* Column 1: Panel A (www + file + Panel A) */}
+          <section className="h-full flex flex-col min-w-0">
+            <ReaderPanel id="A" panelName="Panel A" />
+          </section>
+
+          {/* Column 2: Panel B (www + file + Panel B) */}
+          <section className="h-full flex flex-col min-w-0">
+            <ReaderPanel id="B" panelName="Panel B" />
+          </section>
+
+          {/* Column 3: Study Note (Export file + 서식 리본 + Study note) */}
+          <section className="h-full flex flex-col min-w-0">
+            <StudyNoteEditor />
+          </section>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      {/* Help & User Guide Modal */}
+      <HelpModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+      />
     </div>
   );
 }
