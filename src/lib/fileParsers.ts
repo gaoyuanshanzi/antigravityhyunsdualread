@@ -8,12 +8,149 @@ export interface ParsedDocument {
   content: string; // HTML string or plain text or PDF object url
   epubChapters?: { title: string; content: string }[];
   fileSize: string;
+  rawBuffer?: ArrayBuffer;
+  encoding?: string;
+  fileExt?: string;
 }
+
+export const ENCODING_OPTIONS = [
+  { id: 'utf-8', label: 'UTF-8 (유니코드)' },
+  { id: 'euc-kr', label: 'EUC-KR / CP949 (한국어)' },
+  { id: 'big5', label: 'Big5 (번체 한자)' },
+  { id: 'gbk', label: 'GBK / GB2312 (간체 한자)' },
+  { id: 'shift_jis', label: 'Shift-JIS (일본어)' },
+];
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+/**
+ * Decode ArrayBuffer using specific encoding with fallback
+ */
+export function decodeBuffer(buffer: ArrayBuffer, encoding: string): string {
+  try {
+    const decoder = new TextDecoder(encoding);
+    return decoder.decode(buffer);
+  } catch {
+    return new TextDecoder('utf-8').decode(buffer);
+  }
+}
+
+/**
+ * Smart automatic detection and decoding for UTF-8, EUC-KR, Big5, and GBK
+ */
+export function autoDetectAndDecode(buffer: ArrayBuffer): { text: string; encoding: string } {
+  const bytes = new Uint8Array(buffer);
+
+  // 1. Check UTF-8 BOM (EF BB BF)
+  if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+    return { text: decodeBuffer(buffer, 'utf-8'), encoding: 'utf-8' };
+  }
+
+  // 2. Test strict UTF-8
+  let strictSuccess = false;
+  let strictText = '';
+  try {
+    const strictDecoder = new TextDecoder('utf-8', { fatal: true });
+    strictText = strictDecoder.decode(bytes);
+    strictSuccess = true;
+  } catch {
+    strictSuccess = false;
+  }
+
+  // If strictly valid UTF-8 and contains no replacement characters
+  if (strictSuccess && !strictText.includes('\uFFFD')) {
+    // If it has any Hangul or CJK characters, it's definitely clean UTF-8
+    const hasHangul = /[\uAC00-\uD7A3]/.test(strictText);
+    const hasCJK = /[\u4E00-\u9FFF]/.test(strictText);
+    if (hasHangul || hasCJK || strictText.length < 500) {
+      return { text: strictText, encoding: 'utf-8' };
+    }
+  }
+
+  // 3. Score candidate legacy encodings: euc-kr, big5, gbk
+  const candidates = ['euc-kr', 'big5', 'gbk', 'utf-8'];
+  let bestEncoding = 'euc-kr';
+  let bestScore = -999999;
+  let bestText = '';
+
+  for (const enc of candidates) {
+    try {
+      const dec = new TextDecoder(enc);
+      const text = dec.decode(bytes);
+      const replacementCount = (text.match(/\uFFFD/g) || []).length;
+      const hangulCount = (text.match(/[\uAC00-\uD7A3]/g) || []).length;
+      const cjkCount = (text.match(/[\u4E00-\u9FFF]/g) || []).length;
+
+      let score = 0;
+      if (enc === 'euc-kr') {
+        // High reward for Korean Hangul and common Hanja
+        score = hangulCount * 8 + cjkCount * 2 - replacementCount * 25;
+      } else if (enc === 'big5') {
+        // High reward for Traditional CJK characters, penalty if hangul unexpectedly appears
+        score = cjkCount * 4 - hangulCount * 3 - replacementCount * 25;
+      } else if (enc === 'gbk') {
+        score = cjkCount * 3.5 - hangulCount * 3 - replacementCount * 25;
+      } else {
+        // utf-8
+        score = hangulCount * 2 + cjkCount * 2 - replacementCount * 30;
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestEncoding = enc;
+        bestText = text;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!bestText) {
+    bestText = decodeBuffer(buffer, 'utf-8');
+    bestEncoding = 'utf-8';
+  }
+
+  return { text: bestText, encoding: bestEncoding };
+}
+
+/**
+ * Re-decode existing loaded document with user-selected encoding
+ */
+export async function reDecodeDocument(doc: ParsedDocument, encoding: string): Promise<ParsedDocument> {
+  if (!doc.rawBuffer) return doc;
+  const decodedText = decodeBuffer(doc.rawBuffer, encoding);
+
+  if (doc.fileExt === 'md' || doc.fileExt === 'markdown') {
+    const html = await marked.parse(decodedText);
+    return {
+      ...doc,
+      content: html,
+      encoding,
+    };
+  } else if (doc.fileExt === 'html' || doc.fileExt === 'htm') {
+    return {
+      ...doc,
+      content: decodedText,
+      encoding,
+    };
+  } else if (doc.fileExt === 'rtf') {
+    return {
+      ...doc,
+      content: rtfToHtml(decodedText),
+      encoding,
+    };
+  } else {
+    // Plain text (.txt)
+    return {
+      ...doc,
+      content: decodedText,
+      encoding,
+    };
+  }
 }
 
 /**
@@ -154,7 +291,7 @@ export async function parseEpub(arrayBuffer: ArrayBuffer): Promise<{
 }
 
 /**
- * Main file parser dispatcher
+ * Main file parser dispatcher with encoding support
  */
 export async function parseUploadedFile(file: File): Promise<ParsedDocument> {
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
@@ -163,35 +300,47 @@ export async function parseUploadedFile(file: File): Promise<ParsedDocument> {
 
   // 1. Text (.txt)
   if (ext === 'txt') {
-    const text = await file.text();
+    const arrayBuffer = await file.arrayBuffer();
+    const { text, encoding } = autoDetectAndDecode(arrayBuffer);
     return {
       type: 'text',
       title,
       content: text,
       fileSize,
+      rawBuffer: arrayBuffer,
+      encoding,
+      fileExt: 'txt',
     };
   }
 
   // 2. Markdown (.md, .markdown)
   if (ext === 'md' || ext === 'markdown') {
-    const raw = await file.text();
-    const html = await marked.parse(raw);
+    const arrayBuffer = await file.arrayBuffer();
+    const { text, encoding } = autoDetectAndDecode(arrayBuffer);
+    const html = await marked.parse(text);
     return {
       type: 'html',
       title,
       content: html,
       fileSize,
+      rawBuffer: arrayBuffer,
+      encoding,
+      fileExt: ext,
     };
   }
 
   // 3. HTML (.html, .htm)
   if (ext === 'html' || ext === 'htm') {
-    const html = await file.text();
+    const arrayBuffer = await file.arrayBuffer();
+    const { text, encoding } = autoDetectAndDecode(arrayBuffer);
     return {
       type: 'html',
       title,
-      content: html,
+      content: text,
       fileSize,
+      rawBuffer: arrayBuffer,
+      encoding,
+      fileExt: ext,
     };
   }
 
@@ -203,6 +352,7 @@ export async function parseUploadedFile(file: File): Promise<ParsedDocument> {
       title,
       content: objectUrl,
       fileSize,
+      fileExt: 'pdf',
     };
   }
 
@@ -216,6 +366,7 @@ export async function parseUploadedFile(file: File): Promise<ParsedDocument> {
         title,
         content: result.value || '<p>문서 내용이 비어있습니다.</p>',
         fileSize,
+        fileExt: ext,
       };
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -224,6 +375,7 @@ export async function parseUploadedFile(file: File): Promise<ParsedDocument> {
         title,
         content: `<div class="p-4 text-red-600 bg-red-50 rounded-lg">DOCX 파일 읽기 오류: ${msg}</div>`,
         fileSize,
+        fileExt: ext,
       };
     }
   }
@@ -239,6 +391,7 @@ export async function parseUploadedFile(file: File): Promise<ParsedDocument> {
         content: epub.chapters[0]?.content || '<p>내용이 없습니다.</p>',
         epubChapters: epub.chapters,
         fileSize,
+        fileExt: 'epub',
       };
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -247,28 +400,37 @@ export async function parseUploadedFile(file: File): Promise<ParsedDocument> {
         title,
         content: `<div class="p-4 text-red-600 bg-red-50 rounded-lg">EPUB 파일 파싱 오류: ${msg}</div>`,
         fileSize,
+        fileExt: 'epub',
       };
     }
   }
 
   // 7. Rich Text (.rtf)
   if (ext === 'rtf') {
-    const raw = await file.text();
-    const html = rtfToHtml(raw);
+    const arrayBuffer = await file.arrayBuffer();
+    const { text, encoding } = autoDetectAndDecode(arrayBuffer);
+    const html = rtfToHtml(text);
     return {
       type: 'html',
       title,
       content: html,
       fileSize,
+      rawBuffer: arrayBuffer,
+      encoding,
+      fileExt: 'rtf',
     };
   }
 
-  // Fallback for any other text-like file
-  const fallbackText = await file.text();
+  // Fallback for any other file
+  const arrayBuffer = await file.arrayBuffer();
+  const { text, encoding } = autoDetectAndDecode(arrayBuffer);
   return {
     type: 'text',
     title,
-    content: fallbackText,
+    content: text,
     fileSize,
+    rawBuffer: arrayBuffer,
+    encoding,
+    fileExt: ext,
   };
 }

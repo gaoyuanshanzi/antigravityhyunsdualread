@@ -13,8 +13,9 @@ import {
   ZoomOut,
   Quote,
   Sparkles,
+  Languages,
 } from 'lucide-react';
-import { parseUploadedFile, ParsedDocument } from '@/lib/fileParsers';
+import { parseUploadedFile, ParsedDocument, ENCODING_OPTIONS, reDecodeDocument } from '@/lib/fileParsers';
 
 interface ReaderPanelProps {
   id: 'A' | 'B';
@@ -215,6 +216,30 @@ export default function ReaderPanel({ id, panelName }: ReaderPanelProps) {
 
         {/* Action icons */}
         <div className="flex items-center gap-1 shrink-0">
+          {activeMode === 'file' && loadedDoc?.rawBuffer && (
+            <div className="flex items-center gap-1 border-r border-slate-200 pr-1.5 mr-1">
+              <Languages className="w-3 h-3 text-slate-400" />
+              <select
+                value={loadedDoc.encoding || 'utf-8'}
+                onChange={async (e) => {
+                  const newEnc = e.target.value;
+                  if (loadedDoc) {
+                    const updated = await reDecodeDocument(loadedDoc, newEnc);
+                    setLoadedDoc(updated);
+                  }
+                }}
+                title="문자 인코딩 선택 (한국어 EUC-KR / 번체 Big5 / 유니코드 UTF-8 / 간체 GBK)"
+                className="text-[10px] font-medium border border-slate-200 rounded px-1 py-0.5 bg-white text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+              >
+                {ENCODING_OPTIONS.map((enc) => (
+                  <option key={enc.id} value={enc.id}>
+                    {enc.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {activeMode === 'file' && loadedDoc?.type !== 'pdf' && (
             <div className="flex items-center gap-1 border-r border-slate-200 pr-1.5 mr-1">
               <button
