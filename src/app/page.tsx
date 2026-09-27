@@ -72,10 +72,24 @@ export default function HomePage() {
 
       {/* Main Workspace (Strictly pinned to viewport, no outer page scrolling) */}
       <main className="flex-1 min-h-0 overflow-hidden p-2 sm:p-3 md:p-4 max-w-[1920px] w-full mx-auto flex flex-col">
-        {/* Top 3 Tab Buttons (Fixed, Never Moves) */}
+        {/* Top 3 Tab Buttons (Fixed, Never Moves - Study note on far left) */}
         <div className="shrink-0 flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200/90 rounded-xl shadow-2xs w-full lg:w-auto">
-            {/* Tab 1: Panel A */}
+            {/* Tab 1: Study note (Far Left) */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('note')}
+              className={`flex-1 lg:flex-none px-3.5 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
+                activeTab === 'note'
+                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 ring-1 ring-blue-600'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+              }`}
+            >
+              <FileEdit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>Study note</span>
+            </button>
+
+            {/* Tab 2: Panel A */}
             <button
               type="button"
               onClick={() => setActiveTab('A')}
@@ -89,7 +103,7 @@ export default function HomePage() {
               <span>Panel A</span>
             </button>
 
-            {/* Tab 2: Panel B */}
+            {/* Tab 3: Panel B */}
             <button
               type="button"
               onClick={() => setActiveTab('B')}
@@ -101,20 +115,6 @@ export default function HomePage() {
             >
               <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>Panel B</span>
-            </button>
-
-            {/* Tab 3: Study note */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('note')}
-              className={`flex-1 lg:flex-none px-3.5 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
-                activeTab === 'note'
-                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 ring-1 ring-blue-600'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-              }`}
-            >
-              <FileEdit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>Study note</span>
             </button>
 
             {/* Desktop View Switcher: 3화면 동시 보기 */}
@@ -134,28 +134,38 @@ export default function HomePage() {
           </div>
 
           <span className="hidden xl:inline-block text-xs text-slate-400">
-            패널별 독립 슬라이딩 바 &bull; 전체 화면 고정
+            Study note (좌측) &bull; Panel A / B (우측)
           </span>
         </div>
 
         {/* Content Area (Strictly min-h-0 overflow-hidden) */}
         <div className="flex-1 min-h-0 overflow-hidden">
-          {/* Case 1: Desktop 'all' 3-column split view */}
+          {/* Case 1: Desktop 'all' 3-column split view (Study note -> Panel A -> Panel B) */}
           {activeTab === 'all' ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 h-full min-h-0 overflow-hidden">
+              {/* Column 1: Study Note (Far Left) */}
+              <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
+                <StudyNoteEditor />
+              </section>
+
+              {/* Column 2: Panel A (Center) */}
               <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
                 <ReaderPanel id="A" panelName="Panel A" />
               </section>
+
+              {/* Column 3: Panel B (Right) */}
               <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
                 <ReaderPanel id="B" panelName="Panel B" />
-              </section>
-              <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
-                <StudyNoteEditor />
               </section>
             </div>
           ) : (
             /* Case 2: Single Tab view (Mobile / Focused view) */
             <div className="h-full min-h-0 overflow-hidden">
+              {activeTab === 'note' && (
+                <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
+                  <StudyNoteEditor />
+                </section>
+              )}
               {activeTab === 'A' && (
                 <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
                   <ReaderPanel id="A" panelName="Panel A" />
@@ -164,11 +174,6 @@ export default function HomePage() {
               {activeTab === 'B' && (
                 <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
                   <ReaderPanel id="B" panelName="Panel B" />
-                </section>
-              )}
-              {activeTab === 'note' && (
-                <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
-                  <StudyNoteEditor />
                 </section>
               )}
             </div>
