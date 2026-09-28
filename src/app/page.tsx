@@ -60,8 +60,16 @@ export default function HomePage() {
     return <LoginView onSuccess={handleLoginSuccess} />;
   }
 
+  // Helper: determine CSS display style for each panel slot
+  // In 'all' mode → show as grid (handled by parent grid container)
+  // In single-tab mode → show only the active panel as full-width flex
+  const isAll = activeTab === 'all';
+
+  const sectionDisplay = (tab: 'note' | 'A' | 'B') =>
+    isAll || activeTab === tab ? 'flex' : 'none';
+
   return (
-    <div className="h-screen max-h-screen overflow-hidden bg-slate-100/70 flex flex-col font-sans select-none">
+    <div className="h-screen max-h-screen overflow-hidden bg-slate-100/70 flex flex-col font-sans">
       {/* Top Navbar (Fixed, Never Moves) */}
       <div className="shrink-0">
         <Navbar
@@ -138,46 +146,57 @@ export default function HomePage() {
           </span>
         </div>
 
-        {/* Content Area (Strictly min-h-0 overflow-hidden) */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          {/* Case 1: Desktop 'all' 3-column split view (Study note -> Panel A -> Panel B) */}
-          {activeTab === 'all' ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 h-full min-h-0 overflow-hidden">
-              {/* Column 1: Study Note (Far Left) */}
-              <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
-                <StudyNoteEditor />
-              </section>
+        {/* 
+          Content Area — ALL three panels are ALWAYS mounted in the DOM.
+          Only their visibility (display) changes based on activeTab.
+          This preserves in-memory state (uploaded files, scroll position, etc.)
+          across tab switches.
 
-              {/* Column 2: Panel A (Center) */}
-              <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
-                <ReaderPanel id="A" panelName="Panel A" />
-              </section>
+          Layout strategy:
+          - 'all'  → CSS grid with 3 equal columns
+          - single → only the active section is display:flex, others display:none
+                     The active section fills the entire height/width
+        */}
+        <div
+          className="flex-1 min-h-0 overflow-hidden"
+          style={{
+            display: isAll ? 'grid' : 'block',
+            gridTemplateColumns: isAll ? 'repeat(3, 1fr)' : undefined,
+            gap: isAll ? '0.875rem' : undefined,
+          }}
+        >
+          {/* Column 1: Study Note (Far Left) */}
+          <section
+            className="flex flex-col min-w-0 min-h-0 overflow-hidden"
+            style={{
+              display: sectionDisplay('note'),
+              height: '100%',
+            }}
+          >
+            <StudyNoteEditor />
+          </section>
 
-              {/* Column 3: Panel B (Right) */}
-              <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
-                <ReaderPanel id="B" panelName="Panel B" />
-              </section>
-            </div>
-          ) : (
-            /* Case 2: Single Tab view (Mobile / Focused view) */
-            <div className="h-full min-h-0 overflow-hidden">
-              {activeTab === 'note' && (
-                <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
-                  <StudyNoteEditor />
-                </section>
-              )}
-              {activeTab === 'A' && (
-                <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
-                  <ReaderPanel id="A" panelName="Panel A" />
-                </section>
-              )}
-              {activeTab === 'B' && (
-                <section className="h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
-                  <ReaderPanel id="B" panelName="Panel B" />
-                </section>
-              )}
-            </div>
-          )}
+          {/* Column 2: Panel A (Center) */}
+          <section
+            className="flex flex-col min-w-0 min-h-0 overflow-hidden"
+            style={{
+              display: sectionDisplay('A'),
+              height: '100%',
+            }}
+          >
+            <ReaderPanel id="A" panelName="Panel A" />
+          </section>
+
+          {/* Column 3: Panel B (Right) */}
+          <section
+            className="flex flex-col min-w-0 min-h-0 overflow-hidden"
+            style={{
+              display: sectionDisplay('B'),
+              height: '100%',
+            }}
+          >
+            <ReaderPanel id="B" panelName="Panel B" />
+          </section>
         </div>
       </main>
 
