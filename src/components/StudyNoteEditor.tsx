@@ -123,7 +123,10 @@ export default function StudyNoteEditor() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
+    <div
+      data-panel-id="note"
+      className="flex flex-col h-full bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden"
+    >
       {/* Top Header: Export file & Title */}
       <div className="shrink-0 px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -168,7 +171,10 @@ export default function StudyNoteEditor() {
       </div>
 
       {/* TipTap Rich Editor Main Body with independent sliding bar */}
-      <div className="flex-1 min-h-0 panel-scroll p-4 bg-white">
+      <div
+        data-panel-content="note"
+        className="flex-1 min-h-0 panel-scroll p-4 bg-white"
+      >
         <EditorContent editor={editor} />
       </div>
 

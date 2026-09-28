@@ -104,7 +104,10 @@ export default function ReaderPanel({ id, panelName }: ReaderPanelProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
+    <div
+      data-panel-id={id}
+      className="flex flex-col h-full bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden"
+    >
       {/* 1. Top Section: WWW URL Input (Matching Image 1: www) */}
       <div className="shrink-0 p-2.5 bg-slate-50/80 border-b border-slate-200/80 space-y-2">
         <form onSubmit={handleUrlSubmit} className="flex items-center gap-1.5">
@@ -347,7 +350,10 @@ export default function ReaderPanel({ id, panelName }: ReaderPanelProps) {
 
         {/* State: File Mode */}
         {activeMode === 'file' && loadedDoc && (
-          <div className="flex-1 min-h-0 panel-scroll p-4 bg-white">
+          <div
+            data-panel-content-fallback={id}
+            className="flex-1 min-h-0 panel-scroll p-4 bg-white"
+          >
             {/* 1. PDF File Viewer */}
             {loadedDoc.type === 'pdf' ? (
               <div className="w-full h-full min-h-[500px] flex flex-col">
@@ -380,6 +386,7 @@ export default function ReaderPanel({ id, panelName }: ReaderPanelProps) {
                   </span>
                 </div>
                 <div
+                  data-panel-content={id}
                   className="prose prose-slate max-w-none leading-relaxed text-slate-800"
                   style={{ fontSize: `${fontSize}px` }}
                   dangerouslySetInnerHTML={{
@@ -390,6 +397,7 @@ export default function ReaderPanel({ id, panelName }: ReaderPanelProps) {
             ) : loadedDoc.type === 'text' ? (
               /* 3. Plain Text Viewer */
               <pre
+                data-panel-content={id}
                 className="font-mono whitespace-pre-wrap leading-relaxed text-slate-800 select-text"
                 style={{ fontSize: `${fontSize}px` }}
               >
@@ -398,6 +406,7 @@ export default function ReaderPanel({ id, panelName }: ReaderPanelProps) {
             ) : (
               /* 4. HTML / DOCX / RTF / Markdown converted HTML */
               <div
+                data-panel-content={id}
                 className="prose prose-slate max-w-none leading-relaxed text-slate-800 select-text"
                 style={{ fontSize: `${fontSize}px` }}
                 dangerouslySetInnerHTML={{ __html: loadedDoc.content }}

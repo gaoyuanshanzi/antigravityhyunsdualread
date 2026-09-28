@@ -7,11 +7,15 @@ import StudyNoteEditor from '@/components/StudyNoteEditor';
 import LoginView from '@/components/LoginView';
 import HelpModal from '@/components/HelpModal';
 import { BookOpen, FileEdit, LayoutGrid } from 'lucide-react';
+import { usePanelShortcuts } from '@/hooks/usePanelShortcuts';
 
 export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'A' | 'B' | 'note' | 'all'>('all');
+
+  // Activate scoped Ctrl+A selection behavior for Panel A, Panel B, and Study Note
+  usePanelShortcuts();
 
   // Check login state and set initial tab based on device width
   useEffect(() => {
@@ -167,6 +171,7 @@ export default function HomePage() {
         >
           {/* Column 1: Study Note (Far Left) */}
           <section
+            data-panel-id="note"
             className="flex flex-col min-w-0 min-h-0 overflow-hidden"
             style={{
               display: sectionDisplay('note'),
@@ -178,6 +183,7 @@ export default function HomePage() {
 
           {/* Column 2: Panel A (Center) */}
           <section
+            data-panel-id="A"
             className="flex flex-col min-w-0 min-h-0 overflow-hidden"
             style={{
               display: sectionDisplay('A'),
@@ -189,6 +195,7 @@ export default function HomePage() {
 
           {/* Column 3: Panel B (Right) */}
           <section
+            data-panel-id="B"
             className="flex flex-col min-w-0 min-h-0 overflow-hidden"
             style={{
               display: sectionDisplay('B'),
